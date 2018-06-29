@@ -19,6 +19,7 @@ class DefaultSimulation extends Simulation {
         .check(jsonPath("$[*]").ofType[Map[String, Any]].findAll.saveAs("posts"))
     )
     .exec((session: Session) => {
+      // use session expression to debug response
       val postsMap = session("posts").as[Vector[Map[String, Any]]]
       println(postsMap(0))
       session
