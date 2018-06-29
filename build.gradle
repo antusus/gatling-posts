@@ -1,0 +1,9 @@
+apply plugin: 'scala'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'io.gatling.highcharts:gatling-charts-highcharts:2.3.1'
+}
