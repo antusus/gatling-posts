@@ -28,41 +28,42 @@ class DefaultSimulation extends Simulation {
       println(postsMap(0))
       session
     })
-    .feed(commentsFeeder)
     .exec(repeat(3) {
-      exec(
-        http("Get one post")
-          .get("/posts/${posts.random().id}")
-          .check(jsonPath("$.id").saveAs("one_post_id"))
-      )
-      .pause(10 second, 17 seconds)
-      .exec(
-        http("Read comments of post [${one_post_id}]")
-          .get("/posts/${one_post_id}/comments")
-      )
-      .pause(8 second, 12 seconds)
-      .exec(
-        http("Add comment")
-          .post("/posts/${one_post_id}/comments")
-          .headers(Map(HttpHeaderNames.ContentType -> "application/json; charset=UTF-8"))
-          .body(StringBody(
-            """{
+      feed(commentsFeeder)
+        .exec(
+          http("Get one post")
+            .get("/posts/${posts.random().id}")
+            .check(jsonPath("$.id").saveAs("one_post_id"))
+        )
+        .pause(10 second, 17 seconds)
+        .exec(
+          http("Read comments of post [${one_post_id}]")
+            .get("/posts/${one_post_id}/comments")
+        )
+        .pause(8 second, 12 seconds)
+        .exec(
+          http("Add comment")
+            .post("/posts/${one_post_id}/comments")
+            .headers(Map(HttpHeaderNames.ContentType -> "application/json; charset=UTF-8"))
+            .body(StringBody(
+              """{
             "name": "gatling",
             "email": "gatling@test.pl",
             "body": "${body}"
           }""".stripMargin))
-          .check(jsonPath("$.body").is("${body}"))
-          .check(bodyString.saveAs("new_comment"))
-      )
-      .pause(8 second, 13 seconds)
-      .exec((session: Session) => {
-        println("============ New comment ============")
-        println(session("new_comment").as[String])
-        session
-      })
+            .check(jsonPath("$.body").is("${body}"))
+            .check(bodyString.saveAs("new_comment"))
+        )
+        .pause(8 second, 13 seconds)
+        .exec((session: Session) => {
+          println("============ New comment ============")
+          println(session("new_comment").as[String])
+          session
+        })
     })
 
   setUp(
-    scn.inject(atOnceUsers(1))
+    scn.inject(atOnceUsers(1)) // only one user
+    //    scn.inject(rampUsersPerSec(2) to(3) during(180 seconds) randomized) // 2 users start and 3 more will be added for 3 minutes in random intervals
   ).protocols(httpConf)
 }
