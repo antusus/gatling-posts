@@ -1,16 +1,19 @@
 package com.pragmatists.gatling
 
 import io.gatling.core.Predef._
-import io.gatling.core.json.Jackson
+import io.gatling.core.body.StringBody
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.structure.ScenarioBuilder
 import io.gatling.http.Predef._
+import scala.concurrent.duration._
 
 class DefaultSimulation extends Simulation {
 
   private val httpConf = http
     .baseURL("https://jsonplaceholder.typicode.com")
     .acceptHeader(" application/json")
+
+  private val commentsFeeder = separatedValues("feeders/comments.csv", '#')
 
   private val scn: ScenarioBuilder = scenario("Default Scenario")
     .exec(
@@ -21,17 +24,42 @@ class DefaultSimulation extends Simulation {
     .exec((session: Session) => {
       // use session expression to debug response
       val postsMap = session("posts").as[Vector[Map[String, Any]]]
+      println("============ Sample post from list ============")
       println(postsMap(0))
       session
     })
-    .exec(
-      http("Get one post")
-        .get("/posts/${posts.random().id}")
-        .check(jsonPath("$.id").saveAs("one_post_id"))
-    )
-    .exec((session: Session) => {
-      println("One post " + session("one_post_id").as[String])
-      session
+    .feed(commentsFeeder)
+    .exec(repeat(3) {
+      exec(
+        http("Get one post")
+          .get("/posts/${posts.random().id}")
+          .check(jsonPath("$.id").saveAs("one_post_id"))
+      )
+      .pause(10 second, 17 seconds)
+      .exec(
+        http("Read comments of post [${one_post_id}]")
+          .get("/posts/${one_post_id}/comments")
+      )
+      .pause(8 second, 12 seconds)
+      .exec(
+        http("Add comment")
+          .post("/posts/${one_post_id}/comments")
+          .headers(Map(HttpHeaderNames.ContentType -> "application/json; charset=UTF-8"))
+          .body(StringBody(
+            """{
+            "name": "gatling",
+            "email": "gatling@test.pl",
+            "body": "${body}"
+          }""".stripMargin))
+          .check(jsonPath("$.body").is("${body}"))
+          .check(bodyString.saveAs("new_comment"))
+      )
+      .pause(8 second, 13 seconds)
+      .exec((session: Session) => {
+        println("============ New comment ============")
+        println(session("new_comment").as[String])
+        session
+      })
     })
 
   setUp(
