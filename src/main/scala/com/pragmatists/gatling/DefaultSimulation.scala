@@ -24,6 +24,15 @@ class DefaultSimulation extends Simulation {
       println(postsMap(0))
       session
     })
+    .exec(
+      http("Get one post")
+        .get("/posts/${posts.random().id}")
+        .check(jsonPath("$.id").saveAs("one_post_id"))
+    )
+    .exec((session: Session) => {
+      println("One post " + session("one_post_id").as[String])
+      session
+    })
 
   setUp(
     scn.inject(atOnceUsers(1))
