@@ -11,7 +11,7 @@ class DefaultSimulation extends Simulation {
 
   private val httpConf = http
     .baseURL("https://jsonplaceholder.typicode.com")
-    .acceptHeader(" application/json")
+    .acceptHeader("application/json")
 
   private val commentsFeeder = separatedValues("feeders/comments.csv", '#')
 
