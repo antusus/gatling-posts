@@ -8,7 +8,7 @@ import io.gatling.http.Predef._
 class InitialSimulation extends Simulation {
 
   private val httpConf = http
-    .baseURL("https://jsonplaceholder.typicode.com")
+    .baseUrl("https://jsonplaceholder.typicode.com")
     .acceptHeader(" application/json")
 
   private val scn: ScenarioBuilder = scenario("Initial Scenario")
